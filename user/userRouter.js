@@ -1,26 +1,23 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const db = require('./userModel')
-const router = express.Router();
+const jwt = require('jsonwebtoken')
+const db = require('../user/userModel')
+const restricted = require('../auth/restrictedMiddleware')
+const router = express.Router()
 
-router.post('/register', (req, res) => {
-    let user = req.body;
-    const hash = bcrypt.hashSync(user.password, 10)
-    user.password = hash;
-
-    db.addUser(user)
-    .then(user => {
-        res.status(201).json(user)
-    })
-    .catch(err => {
-        res.status(500).json({
-            message: 'Couldnt register user' + err.message
+router.get('/', restricted, ( req, res ) => {
+    // if (req.decodedToken.roles.includes('student')) {
+        const { department } = req.decodeToken
+        db.getUsers({ department })
+        .then(users => {
+            res.status(200).json(users)
         })
-    })
-})
-
-router.post('/login', (req, res) => {
-    
-})
+        .catch(err => {
+            res.status(400).json({
+                message: "You don't have the right role to access this information" + err.message
+            })
+        })
+    // }
+});
 
 module.exports = router;
